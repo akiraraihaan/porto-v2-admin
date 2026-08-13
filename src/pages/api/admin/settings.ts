@@ -21,7 +21,7 @@ export const PUT: APIRoute = async ({ cookies, request }) => {
   try {
     const { key, value } = await request.json();
     if (!key || typeof key !== "string") {
-      return json({ error: "Key wajib diisi" }, 400);
+return json({ error: "Key is required" }, 400);
     }
 
     let parsedValue: Prisma.InputJsonValue = value as Prisma.InputJsonValue;
@@ -55,7 +55,7 @@ export const DELETE: APIRoute = async ({ cookies, url }) => {
 
   const key = url.searchParams.get("key");
   if (!key) {
-    return json({ error: "Key wajib diisi" }, 400);
+    return json({ error: "Key is required" }, 400);
   }
 
   await prisma.siteSetting.delete({ where: { key } });

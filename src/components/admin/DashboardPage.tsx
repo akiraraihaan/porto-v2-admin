@@ -54,7 +54,7 @@ export default function DashboardPage() {
   }, []);
 
   if (loading) {
-    return <div className="text-gray-500 text-sm py-10">Memuat dashboard...</div>;
+    return <div className="text-gray-500 text-sm py-10">Loading dashboard...</div>;
   }
 
   const c = stats?.counts;
@@ -64,7 +64,7 @@ export default function DashboardPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Dashboard</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Ringkasan konten yang terhubung ke database bersama (porto-v2 &amp; admin).
+          Summary of content connected to the shared database (porto-v2 &amp; admin).
         </p>
       </div>
 
@@ -90,7 +90,7 @@ export default function DashboardPage() {
             Messages{" "}
             {(c?.unreadMessages ?? 0) > 0 && (
               <span className="text-red-600 font-semibold">
-                ({c?.unreadMessages} belum dibaca)
+                ({c?.unreadMessages} unread)
               </span>
             )}
           </p>
@@ -99,12 +99,12 @@ export default function DashboardPage() {
 
       <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
-          <h2 className="font-semibold text-neutral-900 text-sm">Pesan Terbaru</h2>
+          <h2 className="font-semibold text-neutral-900 text-sm">Recent Messages</h2>
           <a
             href="/dashboard/messages"
             className="flex items-center gap-1 text-xs text-neutral-900 hover:underline"
           >
-            Lihat semua <ArrowRight className="size-3" />
+            View all <ArrowRight className="size-3" />
           </a>
         </div>
         {stats?.recentMessages && stats.recentMessages.length > 0 ? (
@@ -119,12 +119,12 @@ export default function DashboardPage() {
                         : "bg-neutral-900 text-white"
                     }
                   >
-                    {m.read ? "Dibaca" : "Baru"}
+                    {m.read ? "Read" : "New"}
                   </span>
                   <span className="text-sm font-semibold text-neutral-900">{m.name}</span>
                   <span className="text-xs text-gray-500">{m.email}</span>
                   <span className="ml-auto text-[11px] text-gray-400">
-                    {new Date(m.createdAt).toLocaleString("id-ID")}
+                    {new Date(m.createdAt).toLocaleString("en-US")}
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-gray-500 line-clamp-2">{m.message}</p>
@@ -133,7 +133,7 @@ export default function DashboardPage() {
           </ul>
         ) : (
           <div className="text-center py-10 text-gray-500 text-sm">
-            Belum ada pesan masuk.
+            No incoming messages yet.
           </div>
         )}
       </div>

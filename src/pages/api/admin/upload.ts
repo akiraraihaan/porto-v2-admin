@@ -10,25 +10,25 @@ export const POST: APIRoute = async ({ cookies, request }) => {
     return json({ error: "Unauthorized" }, 401);
   }
   if (!isR2Configured()) {
-    return json({ error: "R2 tidak dikonfigurasi" }, 500);
+    return json({ error: "R2 is not configured" }, 500);
   }
 
   let form: FormData;
   try {
     form = await request.formData();
   } catch {
-    return json({ error: "Body harus multipart/form-data" }, 400);
+    return json({ error: "Body must be multipart/form-data" }, 400);
   }
 
   const file = form.get("file");
   if (!(file instanceof File)) {
-    return json({ error: "Field 'file' wajib diisi" }, 400);
+    return json({ error: "Field 'file' is required" }, 400);
   }
   if (file.size === 0) {
-    return json({ error: "File kosong" }, 400);
+    return json({ error: "File is empty" }, 400);
   }
   if (file.size > MAX_SIZE) {
-    return json({ error: "File melebihi 10MB" }, 400);
+    return json({ error: "File exceeds 10MB" }, 400);
   }
 
   const key = sanitizeKey(file.name);
@@ -39,7 +39,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
     return json({ ok: true, url });
   } catch (e: unknown) {
     return json(
-      { error: e instanceof Error ? e.message : "Upload gagal" },
+      { error: e instanceof Error ? e.message : "Upload failed" },
       500
     );
   }

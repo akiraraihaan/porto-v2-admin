@@ -52,7 +52,7 @@ export const DELETE: APIRoute = async ({ cookies, params }) => {
 
   const { id } = params;
   if (id === currentUserId) {
-    return json({ error: "Tidak bisa menghapus akun sendiri" }, 400);
+    return json({ error: "Cannot delete your own account" }, 400);
   }
 
   await prisma.adminUser.delete({ where: { id } });

@@ -7,9 +7,18 @@ import {
   Save,
   Loader2,
   RefreshCw,
+  GripVertical,
 } from "lucide-react";
 import { getResourceSpec, type FieldSpec, type ResourceSpec } from "@/lib/specs";
 import { cn } from "@/lib/cn";
+
+interface CrudPageProps {
+  resource: string;
+  title?: string;
+  filter?: { field: string; value: string };
+  defaults?: Record<string, string | boolean>;
+  variant?: "default" | "section";
+}
 
 function emptyForm(spec: ResourceSpec) {
   return Object.fromEntries(
@@ -38,15 +47,15 @@ function UploadButton({
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload gagal");
+      const data = (await res.json()) as { error?: string; url?: string };
+      if (!res.ok) throw new Error(data.error || "Upload failed");
       if (field.type === "array") {
-        onChange(currentValue === "" ? data.url : currentValue + "\n" + data.url);
+        onChange(currentValue === "" ? data.url! : currentValue + "\n" + data.url);
       } else {
-        onChange(data.url);
+        onChange(data.url!);
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Upload gagal");
+      alert(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setBusy(false);
     }
@@ -60,7 +69,7 @@ function UploadButton({
         disabled={busy}
         className="text-[11px] font-medium px-2 py-1 rounded-md bg-neutral-900 text-white hover:bg-neutral-700 disabled:opacity-50"
       >
-        {busy ? "Uploading..." : "Upload Gambar"}
+        {busy ? "Uploading..." : "Upload Image"}
       </button>
       <input
         ref={fileRef}
@@ -164,7 +173,7 @@ function CellValue({ value, column }: { value: unknown; column: string }) {
   if (column === "createdAt") {
     const d = new Date(String(value));
     if (!isNaN(d.getTime())) {
-      return <span className="whitespace-nowrap">{d.toLocaleString("id-ID")}</span>;
+      return <span className="whitespace-nowrap">{d.toLocaleString("en-US")}</span>;
     }
   }
   if (Array.isArray(value)) {
@@ -206,7 +215,24 @@ const FALLBACK_SPEC: ResourceSpec = {
   fields: [],
 };
 
-export default function CrudPage({ resource }: { resource: string }) {
+const FIELD_LABELS: Record<string, string> = {
+  createdAt: "Created At",
+  updatedAt: "Updated At",
+  imgSrc: "Image",
+  techStack: "Tech Stack",
+  liveUrl: "Live URL",
+  credentialId: "Credential ID",
+  credentialUrl: "Credential URL",
+  orgColor: "Org Color",
+};
+
+export default function CrudPage({
+  resource,
+  title,
+  filter,
+  defaults,
+  variant = "default",
+}: CrudPageProps) {
   const spec = getResourceSpec(resource);
   const known = Boolean(spec);
   const effectiveSpec = spec ?? FALLBACK_SPEC;
@@ -220,14 +246,18 @@ export default function CrudPage({ resource }: { resource: string }) {
   const [form, setForm] = useState<Record<string, string | boolean>>(() =>
     emptyForm(effectiveSpec)
   );
+  const [localGroupOrder, setLocalGroupOrder] = useState<string[] | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
       const res = await fetch(`/api/admin/${resource}`, { cache: "no-store" });
-      const data = await res.json();
+      const data = (await res.json()) as Record<string, unknown>[];
       setRows(Array.isArray(data) ? data : []);
+      setLocalGroupOrder(null);
     } catch {
-      setError("Gagal memuat data.");
+      setError("Failed to load data.");
     } finally {
       setLoading(false);
     }
@@ -237,6 +267,30 @@ export default function CrudPage({ resource }: { resource: string }) {
     load();
   }, [load]);
 
+  const sortable = effectiveSpec.columns.includes("order");
+
+  const filteredRows = filter
+    ? rows.filter((r) => r[filter.field] === filter.value)
+    : rows;
+
+  const displayRows = (() => {
+    if (!localGroupOrder) return filteredRows;
+    const map = new Map(filteredRows.map((r) => [String(r.id), r]));
+    return localGroupOrder
+      .map((id) => map.get(id))
+      .filter(Boolean) as Record<string, unknown>[];
+  })();
+
+  const columnLabel = (col: string) => {
+    if (FIELD_LABELS[col]) return FIELD_LABELS[col];
+    const field = effectiveSpec.fields.find((f) => f.name === col);
+    if (field) return field.label;
+    return col
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (c) => c.toUpperCase())
+      .trim();
+  };
+
   const resetForm = () => {
     setForm(emptyForm(effectiveSpec));
     setEditingId(null);
@@ -245,8 +299,18 @@ export default function CrudPage({ resource }: { resource: string }) {
   };
 
   const openCreate = () => {
-    resetForm();
+    const next = { ...emptyForm(effectiveSpec), ...(defaults ?? {}) };
+    if (sortable) {
+      const maxOrder = filteredRows.reduce(
+        (mx, r) => Math.max(mx, Number(r.order) || 0),
+        0
+      );
+      next.order = String(maxOrder + 1);
+    }
+    setForm(next);
+    setEditingId(null);
     setFormOpen(true);
+    setError(null);
   };
 
   const openEdit = (row: Record<string, unknown>) => {
@@ -278,29 +342,56 @@ export default function CrudPage({ resource }: { resource: string }) {
         body: JSON.stringify(form),
       });
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Gagal menyimpan.");
+        const data = (await res.json()) as { error?: string };
+        throw new Error(data.error ?? "Failed to save.");
       }
       resetForm();
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Gagal menyimpan.");
+      setError(e instanceof Error ? e.message : "Failed to save.");
     } finally {
       setSaving(false);
     }
   };
 
   const remove = async (id: string) => {
-    if (!window.confirm("Hapus item ini? Tindakan ini tidak bisa dibatalkan.")) return;
+    if (!window.confirm("Delete this item? This action cannot be undone.")) return;
     try {
       const res = await fetch(`/api/admin/${resource}/${id}`, { method: "DELETE" });
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? "Gagal menghapus.");
+        const data = (await res.json()) as { error?: string };
+        setError(data.error ?? "Failed to delete.");
       }
       await load();
     } catch {
-      setError("Gagal menghapus.");
+      setError("Failed to delete.");
+    }
+  };
+
+  const handleDrop = async (targetIndex: number) => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+    if (dragIndex === null || dragIndex === targetIndex) return;
+    const ids = displayRows.map((r) => String(r.id));
+    const [moved] = ids.splice(dragIndex, 1);
+    ids.splice(targetIndex, 0, moved);
+    setLocalGroupOrder(ids);
+    try {
+      const res = await fetch(`/api/admin/${resource}/reorder`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        setError(data.error ?? "Failed to reorder.");
+        setLocalGroupOrder(null);
+        await load();
+      }
+    } catch {
+      setError("Failed to reorder.");
+      setLocalGroupOrder(null);
+      await load();
     }
   };
 
@@ -310,40 +401,62 @@ export default function CrudPage({ resource }: { resource: string }) {
       (effectiveSpec.editableFields ?? effectiveSpec.fields.map((x) => x.name)).includes(f.name)
   );
 
+  const pageTitle = title ?? effectiveSpec.title;
+
   if (!known) {
     return (
       <div className="text-red-600 text-sm py-10">
-        Resource &quot;{resource}&quot; tidak dikenal.
+        Resource &quot;{resource}&quot; is not recognized.
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{effectiveSpec.title}</h1>
-          <p className="text-sm text-gray-500 mt-1">{effectiveSpec.description}</p>
+    <div className={variant === "section" ? "" : "max-w-6xl"}>
+      {variant === "default" ? (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{pageTitle}</h1>
+            <p className="text-sm text-gray-500 mt-1">{effectiveSpec.description}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={load}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-300 text-sm text-gray-500 hover:bg-neutral-50 transition-colors"
+            >
+              <RefreshCw className="size-4" />
+              Refresh
+            </button>
+            {effectiveSpec.creatable !== false && (
+              <button
+                onClick={openCreate}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-900 text-white font-semibold text-sm hover:opacity-90 transition-opacity"
+              >
+                <Plus className="size-4" />
+                Add
+              </button>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={load}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-300 text-sm text-gray-500 hover:bg-neutral-50 transition-colors"
-          >
-            <RefreshCw className="size-4" />
-            Refresh
-          </button>
+      ) : (
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold tracking-tight text-neutral-900">{pageTitle}</h2>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-gray-500 font-medium">
+              {displayRows.length}
+            </span>
+          </div>
           {effectiveSpec.creatable !== false && (
             <button
               onClick={openCreate}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-900 text-white font-semibold text-sm hover:opacity-90 transition-opacity"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 text-white font-semibold text-xs hover:opacity-90 transition-opacity"
             >
-              <Plus className="size-4" />
-              Tambah
+              <Plus className="size-3.5" />
+              Add
             </button>
           )}
         </div>
-      </div>
+      )}
 
       {error && (
         <div className="mb-4 px-4 py-3 rounded-lg text-sm text-red-600 bg-red-50 border border-red-200">
@@ -355,7 +468,7 @@ export default function CrudPage({ resource }: { resource: string }) {
         <div className="mb-6 rounded-2xl border border-neutral-200 bg-white p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-neutral-900 text-sm">
-              {editingId ? "Edit Item" : "Tambah Item Baru"}
+              {editingId ? "Edit Item" : "Add Item"}
             </h2>
             <button
               onClick={resetForm}
@@ -384,7 +497,7 @@ export default function CrudPage({ resource }: { resource: string }) {
               onClick={resetForm}
               className="px-4 py-2 rounded-lg border border-neutral-300 text-sm text-gray-500 hover:bg-neutral-50 transition-colors"
             >
-              Batal
+              Cancel
             </button>
             <button
               onClick={save}
@@ -392,40 +505,72 @@ export default function CrudPage({ resource }: { resource: string }) {
               className="flex items-center gap-2 px-5 py-2 rounded-lg bg-neutral-900 text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-60"
             >
               {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-              Simpan
+              Save
             </button>
           </div>
         </div>
       )}
 
-      <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
+      <div className={cn("border border-neutral-200 bg-white overflow-hidden", variant === "section" ? "rounded-xl" : "rounded-2xl")}>
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="size-5 animate-spin text-neutral-900" />
           </div>
-        ) : rows.length === 0 ? (
+        ) : displayRows.length === 0 ? (
           <div className="text-center py-16 text-gray-500 text-sm">
-            Belum ada data. Klik &quot;Tambah&quot; untuk membuat item baru.
+            {effectiveSpec.creatable === false
+              ? "No data yet."
+              : "No data yet. Click &quot;Add&quot; to create a new item."}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-neutral-200 text-gray-400 text-xs uppercase tracking-wide">
+                <tr className="bg-neutral-900 text-white text-xs uppercase tracking-wide">
+                  {sortable && <th className="w-10"></th>}
                   {effectiveSpec.columns.map((col) => (
                     <th key={col} className="px-4 py-3 font-semibold">
-                      {col}
+                      {columnLabel(col)}
                     </th>
                   ))}
-                  <th className="px-4 py-3 font-semibold text-right">Aksi</th>
+                  <th className="px-4 py-3 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => (
+                {displayRows.map((row, index) => (
                   <tr
                     key={String(row.id)}
-                    className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 transition-colors"
+                    draggable={sortable}
+                    onDragStart={() => setDragIndex(index)}
+                    onDragOver={(e) => {
+                      if (sortable) {
+                        e.preventDefault();
+                        setDragOverIndex(index);
+                      }
+                    }}
+                    onDragLeave={() => setDragOverIndex(null)}
+                    onDrop={(e) => {
+                      if (sortable) {
+                        e.preventDefault();
+                        handleDrop(index);
+                      }
+                    }}
+                    onDragEnd={() => {
+                      setDragIndex(null);
+                      setDragOverIndex(null);
+                    }}
+                    className={cn(
+                      "border-b border-neutral-100 last:border-0 transition-colors",
+                      dragOverIndex === index && dragIndex !== index
+                        ? "bg-neutral-100"
+                        : "hover:bg-neutral-50"
+                    )}
                   >
+                    {sortable && (
+                      <td className="px-3 py-3 w-10">
+                        <GripVertical className="size-4 text-gray-300 cursor-grab active:cursor-grabbing" />
+                      </td>
+                    )}
                     {effectiveSpec.columns.map((col) => (
                       <td key={col} className="px-4 py-3 text-neutral-700">
                         <CellValue value={row[col]} column={col} />
@@ -443,7 +588,7 @@ export default function CrudPage({ resource }: { resource: string }) {
                         <button
                           onClick={() => remove(String(row.id))}
                           className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-neutral-100 transition-colors"
-                          title="Hapus"
+                          title="Delete"
                         >
                           <Trash2 className="size-4" />
                         </button>

@@ -26,12 +26,12 @@ export const POST: APIRoute = async ({ cookies, request }) => {
   const password = String(body.password ?? "");
 
   if (!email || !password) {
-    return json({ error: "Email dan password wajib diisi" }, 400);
+    return json({ error: "Email and password are required" }, 400);
   }
 
   const exists = await prisma.adminUser.findUnique({ where: { email } });
   if (exists) {
-    return json({ error: "Email sudah terdaftar" }, 409);
+    return json({ error: "Email is already registered" }, 409);
   }
 
   const passwordHash = await bcrypt.hash(password, 10);

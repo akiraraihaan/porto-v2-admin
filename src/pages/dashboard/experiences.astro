@@ -1,6 +1,6 @@
 ---
 import AdminLayout from "@/layouts/AdminLayout.astro";
-import CrudPage from "@/components/admin/CrudPage";
+import ExperiencesPage from "@/components/admin/ExperiencesPage";
 import { requireAuth } from "@/lib/guard";
 
 const blocked = requireAuth(Astro);
@@ -8,5 +8,5 @@ if (blocked) return blocked;
 ---
 
 <AdminLayout title="Experiences">
-  <CrudPage resource="experiences" client:load />
+  <ExperiencesPage client:load />
 </AdminLayout>

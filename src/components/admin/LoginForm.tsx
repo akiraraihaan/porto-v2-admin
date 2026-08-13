@@ -29,12 +29,12 @@ export default function LoginForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Login gagal");
+        setError(data.error ?? "Login failed");
       } else {
         window.location.href = "/dashboard";
       }
     } catch {
-      setError("Terjadi kesalahan. Coba lagi.");
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ export default function LoginForm() {
             <h1 className="text-xl font-bold text-neutral-900 tracking-tight">
               Portfolio Admin
             </h1>
-            <p className="text-sm text-gray-500 mt-1">Masuk untuk mengelola konten</p>
+            <p className="text-sm text-gray-500 mt-1">Sign in to manage content</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -106,7 +106,7 @@ export default function LoginForm() {
               ) : (
                 <LogIn className="size-4" />
               )}
-              Masuk
+              Sign In
             </button>
           </form>
         </div>

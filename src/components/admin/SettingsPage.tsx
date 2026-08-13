@@ -27,7 +27,7 @@ export default function SettingsPage() {
       const data = await res.json();
       setSettings(typeof data === "object" && data !== null ? data : {});
     } catch {
-      setError("Gagal memuat settings.");
+      setError("Failed to load settings.");
     } finally {
       setLoading(false);
     }
@@ -55,7 +55,7 @@ export default function SettingsPage() {
 
   const save = async () => {
     if (!key.trim()) {
-      setError("Key wajib diisi.");
+      setError("Key is required.");
       return;
     }
     setSaving(true);
@@ -68,30 +68,30 @@ export default function SettingsPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error ?? "Gagal menyimpan.");
+        throw new Error(data.error ?? "Failed to save.");
       }
       setFormOpen(false);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Gagal menyimpan.");
+      setError(e instanceof Error ? e.message : "Failed to save.");
     } finally {
       setSaving(false);
     }
   };
 
   const remove = async (k: string) => {
-    if (!window.confirm(`Hapus setting "${k}"?`)) return;
+    if (!window.confirm(`Delete setting "${k}"?`)) return;
     try {
       const res = await fetch(`/api/admin/settings?key=${encodeURIComponent(k)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? "Gagal menghapus.");
+        setError(data.error ?? "Failed to delete.");
       }
       await load();
     } catch {
-      setError("Gagal menghapus.");
+      setError("Failed to delete.");
     }
   };
 
@@ -101,7 +101,7 @@ export default function SettingsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Site Settings</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Konfigurasi situs: brand, teks hero, URL CV/portfolio, kontak, dll.
+            Site configuration: brand, hero text, CV/portfolio URL, contacts, etc.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -117,7 +117,7 @@ export default function SettingsPage() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-900 text-white font-semibold text-sm hover:opacity-90 transition-opacity"
           >
             <Plus className="size-4" />
-            Tambah
+            Add
           </button>
         </div>
       </div>
@@ -132,7 +132,7 @@ export default function SettingsPage() {
         <div className="mb-6 rounded-2xl border border-neutral-200 bg-white p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-neutral-900 text-sm">
-              {editingKey ? "Edit Setting" : "Tambah Setting"}
+              {editingKey ? "Edit Setting" : "Add Setting"}
             </h2>
             <button
               onClick={() => setFormOpen(false)}
@@ -168,7 +168,7 @@ export default function SettingsPage() {
               onClick={() => setFormOpen(false)}
               className="px-4 py-2 rounded-lg border border-neutral-300 text-sm text-gray-500 hover:bg-neutral-50 transition-colors"
             >
-              Batal
+              Cancel
             </button>
             <button
               onClick={save}
@@ -176,7 +176,7 @@ export default function SettingsPage() {
               className="flex items-center gap-2 px-5 py-2 rounded-lg bg-neutral-900 text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-60"
             >
               {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-              Simpan
+              Save
             </button>
           </div>
         </div>
@@ -189,15 +189,15 @@ export default function SettingsPage() {
           </div>
         ) : Object.keys(settings).length === 0 ? (
           <div className="text-center py-16 text-gray-500 text-sm">
-            Belum ada settings.
+            No settings yet.
           </div>
         ) : (
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-neutral-200 text-gray-400 text-xs uppercase tracking-wide">
+              <tr className="bg-neutral-900 text-white text-xs uppercase tracking-wide">
                 <th className="px-4 py-3 font-semibold">Key</th>
                 <th className="px-4 py-3 font-semibold">Value</th>
-                <th className="px-4 py-3 font-semibold text-right">Aksi</th>
+                <th className="px-4 py-3 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -224,7 +224,7 @@ export default function SettingsPage() {
                       <button
                         onClick={() => remove(k)}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-neutral-100 transition-colors"
-                        title="Hapus"
+                        title="Delete"
                       >
                         <Trash2 className="size-4" />
                       </button>

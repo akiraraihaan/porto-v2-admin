@@ -8,7 +8,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const { email, password } = await request.json();
     if (!email || !password) {
-      return json({ error: "Email dan password wajib diisi" }, 400);
+      return json({ error: "Email and password are required" }, 400);
     }
 
     const user = await prisma.adminUser.findUnique({
