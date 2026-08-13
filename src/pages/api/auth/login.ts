@@ -23,7 +23,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     cookies.set("admin_session", createSessionToken(user.id), buildSessionCookieOptions(secure));
 
     return json({ ok: true, user: { id: user.id, email: user.email, name: user.name } });
-  } catch {
-    return json({ error: "Terjadi kesalahan" }, 500);
+  } catch (e) {
+    console.error("[login] ERROR:", e);
+    return json({ error: e instanceof Error ? e.message : "Terjadi kesalahan" }, 500);
   }
 };
