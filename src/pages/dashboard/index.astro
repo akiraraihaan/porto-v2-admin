@@ -1,0 +1,12 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import DashboardPage from "@/components/admin/DashboardPage";
+import { requireAuth } from "@/lib/guard";
+
+const blocked = requireAuth(Astro);
+if (blocked) return blocked;
+---
+
+<AdminLayout title="Dashboard">
+  <DashboardPage client:load />
+</AdminLayout>

@@ -1,0 +1,21 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import Sidebar from "../components/admin/Sidebar";
+
+interface Props {
+  title?: string;
+}
+
+const { title } = Astro.props;
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || "http://localhost:4321";
+---
+
+<BaseLayout title={title}>
+  <div class="flex min-h-screen bg-[#fafafa] text-neutral-900">
+    <Sidebar client:load siteUrl={siteUrl} />
+    <main class="flex-1 min-w-0 px-6 lg:px-10 py-8">
+      <slot />
+    </main>
+  </div>
+</BaseLayout>

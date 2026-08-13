@@ -1,0 +1,6 @@
+---
+import { verifySessionToken } from "@/lib/session";
+
+const userId = verifySessionToken(Astro.cookies.get("admin_session")?.value);
+return Astro.redirect(userId ? "/dashboard" : "/login");
+---

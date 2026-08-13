@@ -1,0 +1,12 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import LoginForm from "@/components/admin/LoginForm";
+import { verifySessionToken } from "@/lib/session";
+
+const userId = verifySessionToken(Astro.cookies.get("admin_session")?.value);
+if (userId) return Astro.redirect("/dashboard");
+---
+
+<BaseLayout title="Login">
+  <LoginForm client:load />
+</BaseLayout>

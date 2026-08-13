@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+html,
+body {
+  background: #fafafa;
+  color: #171717;
+  font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d8 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@layer utilities {
+  .input-admin {
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e5e5;
+    background: #ffffff;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: #171717;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .input-admin:focus {
+    border-color: #171717;
+  }
+}

@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Skill {
+  id     String @id @default(cuid())
+  imgSrc String
+  alt    String
+  label  String @unique
+  order  Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  techStack   String[]
+  repo        String?
+  liveUrl     String?
+  images      String[]
+  height      Int      @default(250)
+  order       Int      @default(0)
+  featured    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ExperienceType {
+  ORGANIZATIONAL
+  WORK
+  NOTABLE
+}
+
+model Experience {
+  id         String          @id @default(cuid())
+  type       ExperienceType
+  date       String
+  title      String
+  org        String?
+  color      String
+  titleColor String
+  orgColor   String?
+  desc       String
+  order      Int             @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Certificate {
+  id            String  @id @default(cuid())
+  imgSrc        String
+  alt           String
+  title         String
+  issuer        String
+  issued        String
+  expires       String
+  credentialId  String
+  credentialUrl String?
+  order         Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model JourneyPhoto {
+  id    String @id @default(cuid())
+  src   String
+  order Int    @default(0)
+
+  createdAt DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model SocialLink {
+  id    String @id @default(cuid())
+  name  String
+  url   String
+  order Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteSetting {
+  key   String @id
+  value Json
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
