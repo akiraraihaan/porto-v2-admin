@@ -40,5 +40,5 @@ export async function uploadToR2(
       cacheControl: "public, max-age=31536000, immutable",
     },
   });
-  return `/uploads/${key}`;
+  return `/${key}`;
 }
