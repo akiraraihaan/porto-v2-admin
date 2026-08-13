@@ -1,8 +1,6 @@
 import "dotenv/config";
 import { env } from "cloudflare:workers";
 
-const publicBase = (process.env.PUBLIC_ASSET_BASE ?? "").replace(/\/$/, "");
-
 const BINDING_NAME = process.env.R2_BINDING ?? "PORTO_V2";
 
 function getBucket(): R2Bucket {
@@ -42,5 +40,5 @@ export async function uploadToR2(
       cacheControl: "public, max-age=31536000, immutable",
     },
   });
-  return `${publicBase}/${key}`;
+  return `/uploads/${key}`;
 }
