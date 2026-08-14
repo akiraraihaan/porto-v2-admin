@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Plus,
   Pencil,
@@ -7,6 +7,7 @@ import {
   Save,
   Loader2,
   RefreshCw,
+  Upload,
 } from "lucide-react";
 
 type SettingsMap = Record<string, unknown>;
@@ -20,12 +21,20 @@ export default function SettingsPage() {
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [key, setKey] = useState("");
   const [value, setValue] = useState("");
+  const [heroImage, setHeroImage] = useState("");
+  const [heroSaving, setHeroSaving] = useState(false);
+  const heroFileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/settings", { cache: "no-store" });
       const data = await res.json();
       setSettings(typeof data === "object" && data !== null ? data : {});
+      setHeroImage(
+        typeof data === "object" && data !== null && typeof (data as SettingsMap).heroImage === "string"
+          ? ((data as SettingsMap).heroImage as string)
+          : ""
+      );
     } catch {
       setError("Failed to load settings.");
     } finally {
@@ -95,6 +104,51 @@ export default function SettingsPage() {
     }
   };
 
+  const uploadHero = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setHeroSaving(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const data = (await res.json()) as { error?: string; url?: string };
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+
+      const saved = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "heroImage", value: data.url }),
+      });
+      if (!saved.ok) {
+        const sd = (await saved.json()) as { error?: string };
+        throw new Error(sd.error ?? "Failed to save hero image.");
+      }
+      setHeroImage(data.url!);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload hero image.");
+    } finally {
+      setHeroSaving(false);
+    }
+  };
+
+  const removeHero = async () => {
+    if (!window.confirm("Remove the custom hero image? The default image will be used.")) return;
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/settings?key=heroImage", { method: "DELETE" });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        setError(data.error ?? "Failed to remove hero image.");
+      }
+      setHeroImage("");
+    } catch {
+      setError("Failed to remove hero image.");
+    }
+  };
+
   return (
     <div className="max-w-4xl">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -127,6 +181,55 @@ export default function SettingsPage() {
           {error}
         </div>
       )}
+
+      <div className="mb-6 rounded-2xl border border-neutral-200 bg-white p-5">
+        <h2 className="font-semibold text-neutral-900 text-sm mb-1">Hero Image</h2>
+        <p className="text-xs text-gray-500 mb-4">
+          The portrait shown next to the hero text on the visitor homepage. Leave it empty to use
+          the default image.
+        </p>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+          <div className="flex-shrink-0">
+            {heroImage ? (
+              <img
+                src={heroImage}
+                alt="Hero preview"
+                className="h-28 w-28 rounded-3xl object-cover shadow-md border border-neutral-200"
+              />
+            ) : (
+              <div className="h-28 w-28 rounded-3xl bg-neutral-100 border border-dashed border-neutral-300 flex items-center justify-center text-gray-400 text-xs">
+                No image
+              </div>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => heroFileRef.current?.click()}
+              disabled={heroSaving}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-900 text-white font-semibold text-xs hover:opacity-90 transition-opacity disabled:opacity-60"
+            >
+              {heroSaving ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+              {heroSaving ? "Uploading..." : "Upload Hero Image"}
+            </button>
+            {heroImage && (
+              <button
+                onClick={removeHero}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-300 text-sm text-gray-500 hover:bg-neutral-50 transition-colors"
+              >
+                <Trash2 className="size-4" />
+                Remove
+              </button>
+            )}
+            <input
+              ref={heroFileRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={uploadHero}
+            />
+          </div>
+        </div>
+      </div>
 
       {formOpen && (
         <div className="mb-6 rounded-2xl border border-neutral-200 bg-white p-5">

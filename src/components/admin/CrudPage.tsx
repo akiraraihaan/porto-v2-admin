@@ -8,6 +8,8 @@ import {
   Loader2,
   RefreshCw,
   GripVertical,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { getResourceSpec, type FieldSpec, type ResourceSpec } from "@/lib/specs";
 import { cn } from "@/lib/cn";
@@ -207,6 +209,8 @@ function CellValue({ value, column }: { value: unknown; column: string }) {
   return <span className="text-xs">{s.length > 90 ? s.slice(0, 90) + "…" : s}</span>;
 }
 
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+
 const FALLBACK_SPEC: ResourceSpec = {
   resource: "",
   title: "Unknown",
@@ -249,6 +253,8 @@ export default function CrudPage({
   const [localGroupOrder, setLocalGroupOrder] = useState<string[] | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const load = useCallback(async () => {
     try {
@@ -256,6 +262,7 @@ export default function CrudPage({
       const data = (await res.json()) as Record<string, unknown>[];
       setRows(Array.isArray(data) ? data : []);
       setLocalGroupOrder(null);
+      setPage(1);
     } catch {
       setError("Failed to load data.");
     } finally {
@@ -279,6 +286,20 @@ export default function CrudPage({
     return localGroupOrder
       .map((id) => map.get(id))
       .filter(Boolean) as Record<string, unknown>[];
+  })();
+
+  const totalPages = Math.max(1, Math.ceil(displayRows.length / pageSize));
+  const activePage = Math.min(page, totalPages);
+  const pageOffset = (activePage - 1) * pageSize;
+  const pageRows = displayRows.slice(pageOffset, pageOffset + pageSize);
+  const pageStart = displayRows.length === 0 ? 0 : pageOffset + 1;
+  const pageEnd = Math.min(pageOffset + pageSize, displayRows.length);
+  const pageNumbers = (() => {
+    const nums: number[] = [];
+    const start = Math.max(1, activePage - 2);
+    const end = Math.min(totalPages, start + 4);
+    for (let i = start; i <= end; i++) nums.push(i);
+    return nums;
   })();
 
   const columnLabel = (col: string) => {
@@ -368,13 +389,17 @@ export default function CrudPage({
     }
   };
 
-  const handleDrop = async (targetIndex: number) => {
+  const handleDrop = async (targetPageIndex: number) => {
     setDragIndex(null);
     setDragOverIndex(null);
-    if (dragIndex === null || dragIndex === targetIndex) return;
+    if (dragIndex === null || dragIndex === targetPageIndex) return;
+    // Reorder within the current page, but recompute the FULL group order
+    // (page offset applied) so global order stays consistent across pages.
     const ids = displayRows.map((r) => String(r.id));
-    const [moved] = ids.splice(dragIndex, 1);
-    ids.splice(targetIndex, 0, moved);
+    const from = pageOffset + dragIndex;
+    const to = pageOffset + targetPageIndex;
+    const [moved] = ids.splice(from, 1);
+    ids.splice(to, 0, moved);
     setLocalGroupOrder(ids);
     try {
       const res = await fetch(`/api/admin/${resource}/reorder`, {
@@ -537,7 +562,7 @@ export default function CrudPage({
                 </tr>
               </thead>
               <tbody>
-                {displayRows.map((row, index) => (
+                {pageRows.map((row, index) => (
                   <tr
                     key={String(row.id)}
                     draggable={sortable}
@@ -598,6 +623,64 @@ export default function CrudPage({
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {displayRows.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-neutral-100 text-sm text-gray-500">
+            <div className="flex items-center gap-2">
+              <span className="text-xs">Rows per page:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="px-2 py-1 rounded-md border border-neutral-300 text-xs bg-white text-neutral-900"
+              >
+                {PAGE_SIZE_OPTIONS.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs whitespace-nowrap">
+                {pageStart}-{pageEnd} of {displayRows.length}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPage(activePage - 1)}
+                  disabled={activePage <= 1}
+                  className="p-1.5 rounded-md border border-neutral-300 text-neutral-700 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Previous page"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                {pageNumbers.map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setPage(n)}
+                    className={cn(
+                      "min-w-8 px-2 py-1 rounded-md text-xs font-medium transition-colors",
+                      n === activePage
+                        ? "bg-neutral-900 text-white"
+                        : "border border-neutral-300 text-neutral-700 hover:bg-neutral-50"
+                    )}
+                  >
+                    {n}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPage(activePage + 1)}
+                  disabled={activePage >= totalPages}
+                  className="p-1.5 rounded-md border border-neutral-300 text-neutral-700 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Next page"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

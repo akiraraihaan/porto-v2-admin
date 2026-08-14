@@ -9,6 +9,14 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   output: 'server',
 
+  server: {
+    port: 4322
+  },
+
+  preview: {
+    port: 4322
+  },
+
   security: {
     checkOrigin: false
   },
