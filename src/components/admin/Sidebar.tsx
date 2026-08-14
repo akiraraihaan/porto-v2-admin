@@ -41,7 +41,7 @@ export default function Sidebar({ siteUrl }: { siteUrl?: string }) {
   };
 
   return (
-    <aside className="w-64 shrink-0 h-screen sticky top-0 bg-white border-r border-neutral-200 flex flex-col">
+    <aside className="w-64 shrink-0 h-full bg-white border-r border-neutral-200 flex flex-col">
       <div className="px-5 py-6 border-b border-neutral-200">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-full bg-neutral-900 flex items-center justify-center text-white font-extrabold text-sm">

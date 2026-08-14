@@ -12,9 +12,9 @@ const siteUrl = import.meta.env.PUBLIC_SITE_URL || "http://localhost:4321";
 ---
 
 <BaseLayout title={title}>
-  <div class="flex min-h-screen bg-[#fafafa] text-neutral-900">
+  <div class="flex h-dvh overflow-hidden bg-[#fafafa] text-neutral-900">
     <Sidebar client:load siteUrl={siteUrl} />
-    <main class="flex-1 min-w-0 px-6 lg:px-10 py-8">
+    <main class="flex-1 min-w-0 overflow-y-auto px-6 lg:px-10 py-8">
       <slot />
     </main>
   </div>

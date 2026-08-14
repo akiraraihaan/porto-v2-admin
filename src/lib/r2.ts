@@ -6,7 +6,7 @@ const BINDING_NAME = process.env.R2_BINDING ?? "PORTO_V2";
 
 function getBucket(): R2Bucket {
   const binding = (env as Record<string, R2Bucket>)[BINDING_NAME];
-  if (!binding) throw new Error(`R2 binding '${BINDING_NAME}' tidak ditemukan`);
+  if (!binding) throw new Error(`R2 binding '${BINDING_NAME}' not found`);
   return binding;
 }
 

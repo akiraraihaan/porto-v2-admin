@@ -53,11 +53,8 @@ export default function LoginForm() {
       <div className="w-full max-w-sm">
         <div className="bg-white border border-neutral-200 rounded-2xl p-8 shadow-xl">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-14 h-14 rounded-full bg-neutral-900 flex items-center justify-center text-white font-extrabold text-xl mb-4">
-              A
-            </div>
             <h1 className="text-xl font-bold text-neutral-900 tracking-tight">
-              Portfolio Admin
+              AR portfolio admin
             </h1>
             <p className="text-sm text-gray-500 mt-1">Sign in to manage content</p>
           </div>
@@ -110,9 +107,6 @@ export default function LoginForm() {
             </button>
           </form>
         </div>
-        <p className="text-center text-[11px] text-gray-400 mt-4">
-          Default: admin@example.com / admin123
-        </p>
       </div>
     </div>
   );

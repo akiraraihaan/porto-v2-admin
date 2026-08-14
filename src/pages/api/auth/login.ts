@@ -16,7 +16,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
 
     if (!user || !(await bcrypt.compare(String(password), user.passwordHash))) {
-      return json({ error: "Email atau password salah" }, 401);
+      return json({ error: "Invalid email or password" }, 401);
     }
 
     const secure = (request.headers.get("x-forwarded-proto") ?? "http") === "https";
@@ -25,6 +25,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return json({ ok: true, user: { id: user.id, email: user.email, name: user.name } });
   } catch (e) {
     console.error("[login] ERROR:", e);
-    return json({ error: e instanceof Error ? e.message : "Terjadi kesalahan" }, 500);
+    return json({ error: e instanceof Error ? e.message : "An error occurred" }, 500);
   }
 };
