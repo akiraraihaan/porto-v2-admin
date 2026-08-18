@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { getResourceSpec, type FieldSpec, type ResourceSpec } from "@/lib/specs";
 import { cn } from "@/lib/cn";
+import CustomSelect from "./CustomSelect";
 
 interface CrudPageProps {
   resource: string;
@@ -242,17 +243,11 @@ function FieldInput({
   if (field.selectOptions) {
     return (
       <div>
-        <select
-          className="input-admin"
+        <CustomSelect
+          options={field.selectOptions}
           value={String(value)}
-          onChange={(e) => onChange(e.target.value)}
-        >
-          {field.selectOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => onChange(v)}
+        />
         {field.help && <p className="text-[11px] text-gray-500 mt-1">{field.help}</p>}
       </div>
     );
@@ -299,18 +294,13 @@ function FieldInput({
     );
   }
   if (field.type === "select") {
+    const opts = (field.options ?? []).map((o) => ({ value: o, label: o }));
     return (
-      <select
-        className="input-admin"
+      <CustomSelect
+        options={opts}
         value={String(value)}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {field.options?.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
+        onChange={(v) => onChange(v)}
+      />
     );
   }
   return (
@@ -814,20 +804,14 @@ export default function CrudPage({
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-neutral-100 text-sm text-gray-500">
             <div className="flex items-center gap-2">
               <span className="text-xs">Rows per page:</span>
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setPage(1);
-                }}
-                className="px-2 py-1 rounded-md border border-neutral-300 text-xs bg-white text-neutral-900"
-              >
-                {PAGE_SIZE_OPTIONS.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </select>
+              <CustomSelect
+                options={PAGE_SIZE_OPTIONS.map((o) => ({ value: String(o), label: String(o) }))}
+                value={String(pageSize)}
+                onChange={(v) => { setPageSize(Number(v)); setPage(1); }}
+                size="sm"
+                className="w-20"
+                position="fixed"
+              />
             </div>
             <div className="flex items-center gap-3">
               <span className="text-xs whitespace-nowrap">

@@ -20,12 +20,13 @@ export const GET: APIRoute = async ({ cookies, params }) => {
 
   if (resource === "skills") {
     const enriched = await Promise.all(
-      rows.map(async (row: Record<string, unknown>) => {
-        if (typeof row.imgSrc === "string" && row.imgSrc.startsWith("/")) {
-          const uri = await getObjectDataUri(row.imgSrc);
-          if (uri) return { ...row, imgSrc: uri };
+      rows.map(async (row) => {
+        const r = row as Record<string, unknown>;
+        if (typeof r.imgSrc === "string" && r.imgSrc.startsWith("/")) {
+          const uri = await getObjectDataUri(r.imgSrc);
+          if (uri) return { ...r, imgSrc: uri };
         }
-        return row;
+        return r;
       })
     );
     return json(enriched);
