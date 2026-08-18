@@ -17,6 +17,11 @@ interface CustomSelectProps {
   position?: "absolute" | "fixed";
 }
 
+const ITEM_HEIGHT_SM = 28;
+const ITEM_HEIGHT_MD = 36;
+const DROPDOWN_PADDING = 12;
+const GAP = 4;
+
 export default function CustomSelect({
   options,
   value,
@@ -32,38 +37,78 @@ export default function CustomSelect({
   const [menuStyle, setMenuStyle] = useState<React.CSSProperties>(() =>
     position === "fixed" ? { opacity: 0 } : {}
   );
+  const [flipUp, setFlipUp] = useState(false);
 
   const selected = options.find((o) => o.value === value);
   const label = selected?.label ?? placeholder;
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
+    const handleMouseDown = (e: MouseEvent) => {
       if (dropRef.current && !dropRef.current.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
+    const reposition = () => {
+      if (position === "fixed" && triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        const itemH = size === "sm" ? ITEM_HEIGHT_SM : ITEM_HEIGHT_MD;
+        const estimatedHeight = Math.min(options.length, 6) * itemH + DROPDOWN_PADDING;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const shouldFlip = spaceBelow < estimatedHeight + GAP;
+        setFlipUp(shouldFlip);
+        setMenuStyle({
+          position: "fixed",
+          ...(shouldFlip
+            ? { bottom: window.innerHeight - rect.top + GAP }
+            : { top: rect.bottom + GAP }),
+          left: rect.left,
+          width: rect.width,
+          zIndex: 50,
+          opacity: 1,
+        });
+      }
+    };
+    document.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("scroll", reposition, { passive: true });
+    window.addEventListener("resize", reposition, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("scroll", reposition);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open, position, options.length, size]);
 
   const toggle = useCallback(() => {
-    if (position === "fixed" && triggerRef.current) {
+    if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      setMenuStyle({
-        position: "fixed",
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-        zIndex: 50,
-        opacity: 1,
-      });
+      const itemH = size === "sm" ? ITEM_HEIGHT_SM : ITEM_HEIGHT_MD;
+      const estimatedHeight = Math.min(options.length, 6) * itemH + DROPDOWN_PADDING;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const shouldFlip = spaceBelow < estimatedHeight + GAP;
+      setFlipUp(shouldFlip);
+
+      if (position === "fixed") {
+        setMenuStyle({
+          position: "fixed",
+          ...(shouldFlip
+            ? { bottom: window.innerHeight - rect.top + GAP }
+            : { top: rect.bottom + GAP }),
+          left: rect.left,
+          width: rect.width,
+          zIndex: 50,
+          opacity: 1,
+        });
+      }
     }
     setOpen((o) => !o);
-  }, [position]);
+  }, [position, options.length, size]);
 
   const sizeClasses = {
     sm: "px-2 py-1 text-xs",
     md: "px-3 py-2 text-sm",
   };
+
+  const absoluteStyle: React.CSSProperties | undefined =
+    position === "absolute" && flipUp ? { bottom: "100%", top: "auto", marginBottom: GAP } : undefined;
 
   return (
     <div className={cn("relative", className)} ref={dropRef}>
@@ -85,11 +130,11 @@ export default function CustomSelect({
       {open && (
         <div
           className={cn(
-            position === "fixed"
-              ? "bg-white border border-neutral-200 rounded-lg shadow-lg overflow-hidden"
-              : "absolute z-50 mt-1 w-full bg-white border border-neutral-200 rounded-lg shadow-lg overflow-hidden"
+            "bg-white border border-neutral-200 rounded-lg shadow-lg overflow-hidden",
+            position === "fixed" ? "" : "absolute z-50 w-full",
+            position === "absolute" && !flipUp && "mt-1",
           )}
-          style={position === "fixed" ? menuStyle : undefined}
+          style={position === "fixed" ? menuStyle : absoluteStyle}
         >
           <ul className="max-h-48 p-1.5 text-sm text-gray-700 overflow-y-auto">
             {options.map((opt) => (

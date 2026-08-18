@@ -711,7 +711,7 @@ export default function CrudPage({
         </div>
       )}
 
-      <div className={cn("border border-neutral-200 bg-white overflow-hidden", variant === "section" ? "rounded-xl" : "rounded-2xl")}>
+      <div className={cn("border border-neutral-200 bg-white", variant === "section" ? "rounded-xl" : "rounded-2xl")}>
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="size-5 animate-spin text-neutral-900" />
@@ -810,7 +810,6 @@ export default function CrudPage({
                 onChange={(v) => { setPageSize(Number(v)); setPage(1); }}
                 size="sm"
                 className="w-20"
-                position="fixed"
               />
             </div>
             <div className="flex items-center gap-3">
