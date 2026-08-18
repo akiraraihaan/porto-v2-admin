@@ -14,7 +14,7 @@ const MIME: Record<string, string> = {
 
 export const GET: APIRoute = async ({ params }) => {
   const path = params.path ?? "";
-  const obj = await getObjectR2(`uploads/${path}`);
+  const obj = await getObjectR2(`icons/${path}`);
   if (!obj) {
     return new Response("Not Found", { status: 404 });
   }

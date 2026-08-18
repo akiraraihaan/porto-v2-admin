@@ -165,3 +165,31 @@ export async function getObjectR2(key: string): Promise<R2Object | null> {
     cacheControl: obj.httpMetadata?.cacheControl ?? "public, max-age=31536000",
   };
 }
+
+const dataUriCache = new Map<string, string>();
+
+const MIME: Record<string, string> = {
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".ico": "image/x-icon",
+  ".avif": "image/avif",
+};
+
+export async function getObjectDataUri(path: string): Promise<string | null> {
+  if (dataUriCache.has(path)) return dataUriCache.get(path)!;
+  const obj = await getObjectR2(path.replace(/^\//, ""));
+  if (!obj) return null;
+  const buf = new Uint8Array(await new Response(obj.body).arrayBuffer());
+  const ext = "." + path.split(".").pop()?.toLowerCase();
+  const ct = MIME[ext] || obj.contentType || "application/octet-stream";
+  let binary = "";
+  for (let i = 0; i < buf.length; i++) binary += String.fromCharCode(buf[i]);
+  const b64 = btoa(binary);
+  const uri = `data:${ct};base64,${b64}`;
+  dataUriCache.set(path, uri);
+  return uri;
+}

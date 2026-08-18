@@ -10,6 +10,7 @@ import {
   GripVertical,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { getResourceSpec, type FieldSpec, type ResourceSpec } from "@/lib/specs";
 import { cn } from "@/lib/cn";
@@ -85,15 +86,177 @@ function UploadButton({
   );
 }
 
+function TechStackInput({
+  value,
+  onChange,
+  skills,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  skills: { label: string; imgSrc: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const dropRef = useRef<HTMLDivElement>(null);
+
+  const items = value
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const available = skills.filter((s) => !items.includes(s.label));
+  const imgFor = (label: string) => skills.find((s) => s.label === label)?.imgSrc;
+
+  const add = (label: string) => {
+    if (!label || items.includes(label)) return;
+    onChange(items.concat(label).join("\n"));
+  };
+  const remove = (label: string) => {
+    onChange(items.filter((i) => i !== label).join("\n"));
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div className="space-y-2">
+      {/* Selected badges */}
+      <div className="flex flex-wrap gap-1.5">
+        {items.length === 0 && (
+          <span className="text-[11px] text-gray-400">No tech selected yet.</span>
+        )}
+        {items.map((label) => (
+          <span
+            key={label}
+            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-neutral-100 border border-neutral-200 text-xs font-medium text-neutral-900"
+          >
+            {imgFor(label) ? (
+              <img
+                src={imgFor(label)}
+                alt=""
+                className="size-3.5"
+                width={14}
+                height={14}
+              />
+            ) : (
+              <span className="size-3.5 rounded-full bg-neutral-300" />
+            )}
+            {label}
+            <button
+              type="button"
+              onClick={() => remove(label)}
+              className="text-gray-400 hover:text-red-500 transition-colors"
+              title={`Remove ${label}`}
+            >
+              <X className="size-3.5" />
+            </button>
+          </span>
+        ))}
+      </div>
+
+      {/* Custom dropdown */}
+      <div className="relative" ref={dropRef}>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="w-full inline-flex items-center justify-between px-3 py-2 text-sm text-gray-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:ring-2 focus:ring-neutral-200 transition-colors"
+        >
+          <span>Add tech from skills…</span>
+          <ChevronDown className="size-4 text-gray-400" />
+        </button>
+
+        {open && (
+          <div className="absolute z-50 mt-1 w-full bg-white border border-neutral-200 rounded-lg shadow-lg overflow-hidden">
+            <ul className="max-h-48 p-1.5 text-sm text-gray-700 overflow-y-auto">
+              {available.length === 0 && (
+                <li className="px-3 py-2 text-xs text-gray-400">
+                  No more skills to add
+                </li>
+              )}
+              {available.map((s) => (
+                <li key={s.label}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      add(s.label);
+                      setOpen(false);
+                    }}
+                    className="w-full inline-flex items-center gap-2 px-3 py-2 hover:bg-neutral-100 rounded-md text-left transition-colors"
+                  >
+                    {s.imgSrc ? (
+                      <img
+                        src={s.imgSrc}
+                        alt=""
+                        className="size-5 shrink-0 rounded"
+                        width={20}
+                        height={20}
+                      />
+                    ) : (
+                      <span className="size-5 shrink-0 rounded bg-neutral-200" />
+                    )}
+                    {s.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="border-t border-neutral-200 p-2">
+              <a
+                href="/dashboard/skills"
+                className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-900 text-white text-xs font-semibold rounded-lg hover:bg-neutral-700 transition-colors"
+              >
+                <Plus className="size-3.5" />
+                Add new skill
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function FieldInput({
   field,
   value,
   onChange,
+  skills,
 }: {
   field: FieldSpec;
   value: string | boolean;
   onChange: (v: string | boolean) => void;
+  skills?: { label: string; imgSrc: string }[];
 }) {
+  if (field.fromSkills) {
+    return (
+      <TechStackInput
+        value={String(value)}
+        onChange={(v) => onChange(v)}
+        skills={skills ?? []}
+      />
+    );
+  }
+  if (field.selectOptions) {
+    return (
+      <div>
+        <select
+          className="input-admin"
+          value={String(value)}
+          onChange={(e) => onChange(e.target.value)}
+        >
+          {field.selectOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        {field.help && <p className="text-[11px] text-gray-500 mt-1">{field.help}</p>}
+      </div>
+    );
+  }
   if (field.type === "textarea" || field.type === "array") {
     return (
       <div>
@@ -172,6 +335,17 @@ function FieldInput({
 }
 
 function CellValue({ value, column }: { value: unknown; column: string }) {
+  if (column === "imgSrc" && typeof value === "string" && (value.startsWith("/") || value.startsWith("data:"))) {
+    return (
+      <img
+        src={value}
+        alt=""
+        className="size-8 rounded object-contain bg-neutral-100 border border-neutral-200"
+        width={32}
+        height={32}
+      />
+    );
+  }
   if (column === "createdAt") {
     const d = new Date(String(value));
     if (!isNaN(d.getTime())) {
@@ -255,6 +429,16 @@ export default function CrudPage({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [skills, setSkills] = useState<{ label: string; imgSrc: string }[]>([]);
+
+  useEffect(() => {
+    if (resource === "projects") {
+      fetch("/api/admin/skills", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((data) => setSkills(Array.isArray(data) ? data : []))
+        .catch(() => setSkills([]));
+    }
+  }, [resource]);
 
   const load = useCallback(async () => {
     try {
@@ -513,6 +697,7 @@ export default function CrudPage({
                   field={f}
                   value={form[f.name] ?? ""}
                   onChange={(v) => setForm((prev) => ({ ...prev, [f.name]: v }))}
+                  skills={f.fromSkills ? skills : undefined}
                 />
               </div>
             ))}

@@ -73,5 +73,11 @@ export function sanitizeBody(
     }
   }
 
+  if (!forUpdate && spec.createDefaults) {
+    for (const [key, value] of Object.entries(spec.createDefaults)) {
+      if (data[key] == null) data[key] = value;
+    }
+  }
+
   return data;
 }

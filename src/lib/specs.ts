@@ -11,6 +11,8 @@ export interface FieldSpec {
   label: string;
   type: FieldType;
   options?: string[];
+  selectOptions?: { value: string; label: string }[];
+  fromSkills?: boolean;
   required?: boolean;
   rows?: number;
   help?: string;
@@ -25,6 +27,7 @@ export interface ResourceSpec {
   columns: string[];
   editableFields?: string[];
   creatable?: boolean;
+  createDefaults?: Record<string, string | number | boolean>;
 }
 
 export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
@@ -53,7 +56,8 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
         name: "techStack",
         label: "Tech Stack",
         type: "array",
-        help: "One per line or comma separated. Example: Next.js\nPrisma\nPostgreSQL",
+        fromSkills: true,
+        help: "Add from the available skills.",
       },
       { name: "repo", label: "Repo URL", type: "text" },
       { name: "liveUrl", label: "Live URL", type: "text" },
@@ -64,7 +68,16 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
         upload: true,
         help: "One path/URL per line. Example: /images/project-1.png",
       },
-      { name: "height", label: "Height", type: "number", help: "Card height in the masonry grid." },
+      {
+        name: "height",
+        label: "Height",
+        type: "number",
+        selectOptions: [
+          { value: "400", label: "400 (Portrait)" },
+          { value: "250", label: "250 (Landscape)" },
+        ],
+        help: "400 = portrait card, 250 = landscape card.",
+      },
       { name: "featured", label: "Featured", type: "boolean", help: "Show in Featured Projects (CardSwap)." },
     ],
   },
@@ -85,11 +98,12 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
       { name: "date", label: "Date", type: "text", required: true, help: "Example: Dec 2024 - Present" },
       { name: "title", label: "Title", type: "text", required: true },
       { name: "org", label: "Organization", type: "text" },
-      { name: "color", label: "Color", type: "text", help: "Gradient class, e.g. from-[#83DDCB] to-[#67AEFF]" },
-      { name: "titleColor", label: "Title Color", type: "text", help: "Example: text-[#83DDCB]" },
-      { name: "orgColor", label: "Org Color", type: "text", help: "Example: text-[#67AEFF]" },
       { name: "desc", label: "Description", type: "textarea", rows: 3 },
     ],
+    createDefaults: {
+      color: "from-[#83DDCB] to-[#67AEFF]",
+      titleColor: "text-[#97FFA4]",
+    },
   },
   certificates: {
     resource: "certificates",
