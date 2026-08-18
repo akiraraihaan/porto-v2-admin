@@ -85,15 +85,16 @@ export default function DashboardPage() {
           className="rounded-2xl border border-neutral-200 bg-white p-5 hover:border-neutral-300 hover:shadow-sm transition-all"
         >
           <MessageSquare className="size-5 text-neutral-900 mb-3" />
-          <p className="text-3xl font-bold text-neutral-900">{c?.messages ?? 0}</p>
-          <p className="text-xs text-gray-500 mt-1">
-            Messages{" "}
+          <div className="flex items-center gap-2">
+            <p className="text-3xl font-bold text-neutral-900">{c?.messages ?? 0}</p>
             {(c?.unreadMessages ?? 0) > 0 && (
-              <span className="text-red-600 font-semibold">
-                ({c?.unreadMessages} unread)
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[11px] font-semibold">
+                <span className="size-1.5 rounded-full bg-red-500 animate-pulse" />
+                {c?.unreadMessages} new
               </span>
             )}
-          </p>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Messages</p>
         </a>
       </div>
 
@@ -115,10 +116,11 @@ export default function DashboardPage() {
                   <span
                     className={
                       m.read
-                        ? "bg-neutral-100 text-gray-500"
-                        : "bg-neutral-900 text-white"
+                        ? "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-100 text-gray-500 text-[11px] font-semibold"
+                        : "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-900 text-white text-[11px] font-semibold"
                     }
                   >
+                    {!m.read && <span className="size-1 rounded-full bg-white animate-pulse" />}
                     {m.read ? "Read" : "New"}
                   </span>
                   <span className="text-sm font-semibold text-neutral-900">{m.name}</span>

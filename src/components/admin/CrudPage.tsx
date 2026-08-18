@@ -724,16 +724,16 @@ export default function CrudPage({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-left text-sm border-separate border-spacing-0">
               <thead>
                 <tr className="bg-neutral-900 text-white text-xs uppercase tracking-wide">
-                  {sortable && <th className="w-10"></th>}
+                  {sortable && <th className="w-10 first:rounded-tl-2xl"></th>}
                   {effectiveSpec.columns.map((col) => (
-                    <th key={col} className="px-4 py-3 font-semibold">
+                    <th key={col} className="px-4 py-3 font-semibold first:rounded-tl-2xl last:rounded-tr-2xl">
                       {columnLabel(col)}
                     </th>
                   ))}
-                  <th className="px-4 py-3 font-semibold text-right">Actions</th>
+                  <th className="px-4 py-3 font-semibold text-right last:rounded-tr-2xl">Actions</th>
                 </tr>
               </thead>
               <tbody>

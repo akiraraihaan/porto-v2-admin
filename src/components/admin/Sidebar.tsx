@@ -30,9 +30,14 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ siteUrl }: { siteUrl?: string }) {
   const [pathname, setPathname] = useState("");
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     setPathname(window.location.pathname);
+    fetch("/api/admin/stats", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setUnread(d.unreadMessages ?? 0))
+      .catch(() => {});
   }, []);
 
   const logout = async () => {
@@ -72,6 +77,11 @@ export default function Sidebar({ siteUrl }: { siteUrl?: string }) {
             >
               <item.icon className="size-4" />
               {item.label}
+              {item.href === "/dashboard/messages" && unread > 0 && (
+                <span className="ml-auto inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold">
+                  {unread > 99 ? "99+" : unread}
+                </span>
+              )}
             </a>
           );
         })}
