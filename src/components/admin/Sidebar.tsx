@@ -34,9 +34,9 @@ export default function Sidebar({ siteUrl }: { siteUrl?: string }) {
 
   useEffect(() => {
     setPathname(window.location.pathname);
-    fetch("/api/admin/stats", { cache: "no-store" })
+    fetch("/api/admin/messages/unread-count", { cache: "no-store" })
       .then((r) => r.json())
-      .then((d) => setUnread(d.unreadMessages ?? 0))
+      .then((d) => setUnread(d.count ?? 0))
       .catch(() => {});
   }, []);
 

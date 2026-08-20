@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { env } from "cloudflare:workers";
 import { createHash, createHmac } from "node:crypto";
 

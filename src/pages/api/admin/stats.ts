@@ -33,6 +33,7 @@ export const GET: APIRoute = async ({ cookies }) => {
   const recentMessages = await prisma.contactMessage.findMany({
     orderBy: { createdAt: "desc" },
     take: 5,
+    select: { id: true, name: true, email: true, message: true, read: true, createdAt: true },
   });
 
   return json({
@@ -48,5 +49,5 @@ export const GET: APIRoute = async ({ cookies }) => {
       users,
     },
     recentMessages,
-  });
+  }, 200, { "Cache-Control": "private, max-age=30" });
 };
