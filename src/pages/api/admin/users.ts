@@ -20,25 +20,30 @@ export const POST: APIRoute = async ({ cookies, request }) => {
     return json({ error: "Unauthorized" }, 401);
   }
 
-  const body = await request.json();
-  const email = String(body.email ?? "").toLowerCase().trim();
-  const name = String(body.name ?? "").trim();
-  const password = String(body.password ?? "");
+  try {
+    const body = await request.json();
+    const email = String(body.email ?? "").toLowerCase().trim();
+    const name = String(body.name ?? "").trim();
+    const password = String(body.password ?? "");
 
-  if (!email || !password) {
-    return json({ error: "Email and password are required" }, 400);
+    if (!email || !password) {
+      return json({ error: "Email and password are required" }, 400);
+    }
+
+    const exists = await prisma.adminUser.findUnique({ where: { email } });
+    if (exists) {
+      return json({ error: "Email is already registered" }, 409);
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await prisma.adminUser.create({
+      data: { email, name: name || null, passwordHash },
+      select: { id: true, email: true, name: true, createdAt: true },
+    });
+
+    return json(user, 201);
+  } catch (e) {
+    console.error("[users:create] ERROR:", e);
+    return json({ error: "Failed to create user" }, 500);
   }
-
-  const exists = await prisma.adminUser.findUnique({ where: { email } });
-  if (exists) {
-    return json({ error: "Email is already registered" }, 409);
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.adminUser.create({
-    data: { email, name: name || null, passwordHash },
-    select: { id: true, email: true, name: true, createdAt: true },
-  });
-
-  return json(user, 201);
 };

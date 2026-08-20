@@ -3,8 +3,15 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { createSessionToken, buildSessionCookieOptions } from "@/lib/session";
 import { json } from "@/lib/http";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const POST: APIRoute = async ({ request, cookies }) => {
+  const ip = getClientIp(request);
+  const rl = rateLimit(`login:${ip}`, 5, 60_000);
+  if (!rl.allowed) {
+    return json({ error: "Too many login attempts. Try again later." }, 429);
+  }
+
   try {
     const { email, password } = await request.json();
     if (!email || !password) {
@@ -25,6 +32,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return json({ ok: true, user: { id: user.id, email: user.email, name: user.name } });
   } catch (e) {
     console.error("[login] ERROR:", e);
-    return json({ error: e instanceof Error ? e.message : "An error occurred" }, 500);
+    return json({ error: "An error occurred during login" }, 500);
   }
 };

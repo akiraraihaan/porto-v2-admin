@@ -37,10 +37,8 @@ export const POST: APIRoute = async ({ cookies, request }) => {
   try {
     const url = await uploadToR2(key, buffer, file.type || "application/octet-stream");
     return json({ ok: true, url });
-  } catch (e: unknown) {
-    return json(
-      { error: e instanceof Error ? e.message : "Upload failed" },
-      500
-    );
+  } catch (e) {
+    console.error("[upload] ERROR:", e);
+    return json({ error: "Upload failed" }, 500);
   }
 };

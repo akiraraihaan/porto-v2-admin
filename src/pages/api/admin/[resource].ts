@@ -4,6 +4,13 @@ import { getDelegate, getOrderBy, sanitizeBody } from "@/lib/crud";
 import { getResourceSpec } from "@/lib/specs";
 import { json } from "@/lib/http";
 import { getObjectDataUri } from "@/lib/r2";
+import { checkCsrfOrigin } from "@/lib/sanitize";
+
+const ADMIN_API = [
+  import.meta.env.SITE_URL,
+  "https://admin.akiraa.site",
+  "http://localhost:4322",
+].filter(Boolean) as string[];
 
 export const GET: APIRoute = async ({ cookies, params }) => {
   if (!getAuthUser(cookies)) {
@@ -40,6 +47,10 @@ export const POST: APIRoute = async ({ cookies, params, request }) => {
     return json({ error: "Unauthorized" }, 401);
   }
 
+  if (!checkCsrfOrigin(request, ADMIN_API)) {
+    return json({ error: "Forbidden" }, 403);
+  }
+
   const resource = params.resource!;
   const delegate = getDelegate(resource);
   const spec = getResourceSpec(resource);
@@ -47,16 +58,13 @@ export const POST: APIRoute = async ({ cookies, params, request }) => {
     return json({ error: "Cannot create resource" }, 400);
   }
 
-  const body = await request.json();
-  const data = sanitizeBody(body, spec);
-
   try {
+    const body = await request.json();
+    const data = sanitizeBody(body, spec);
     const row = await delegate.create({ data });
     return json(row, 201);
-  } catch (e: unknown) {
-    return json(
-      { error: e instanceof Error ? e.message : "Create failed" },
-      400
-    );
+  } catch (e) {
+    console.error("[resource:create] ERROR:", e);
+    return json({ error: "Create failed" }, 400);
   }
 };

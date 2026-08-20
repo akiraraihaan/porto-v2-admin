@@ -199,7 +199,7 @@ export default function MessagesPage() {
 
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <a
-                    href={`mailto:${msg.email}?subject=Re: Your message&body=Hi ${msg.name},%0D%0A%0D%0A`}
+                    href={`mailto:${encodeURIComponent(msg.email)}?subject=${encodeURIComponent("Re: Your message")}&body=${encodeURIComponent(`Hi ${msg.name},\r\n\r\n`)}`}
                     onClick={(e) => e.stopPropagation()}
                     className="p-1.5 rounded-lg text-gray-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
                     title="Reply via email"

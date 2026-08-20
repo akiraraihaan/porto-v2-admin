@@ -2,10 +2,18 @@ import { createHmac, timingSafeEqual } from "crypto";
 import type { AstroCookies } from "astro";
 
 const SESSION_COOKIE = "admin_session";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+const COOKIE_MAX_AGE = 60 * 60 * 2; // 2 hours
 
 function getSecret(): string {
-  return process.env.SESSION_SECRET || "dev-secret-change-me";
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production" || process.env.CF_WORKERS) {
+      throw new Error("SESSION_SECRET is required in production");
+    }
+    console.warn("[session] SESSION_SECRET not set — using insecure dev fallback");
+    return "dev-secret-change-me";
+  }
+  return secret;
 }
 
 function sign(value: string): string {
@@ -41,4 +49,8 @@ const sessionCookieOptionsBase = {
 
 export function buildSessionCookieOptions(secure: boolean) {
   return { ...sessionCookieOptionsBase, secure };
+}
+
+export function buildSessionDeleteOptions(secure: boolean) {
+  return { ...sessionCookieOptionsBase, secure, maxAge: 0 };
 }

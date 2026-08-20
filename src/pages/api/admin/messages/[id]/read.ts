@@ -17,10 +17,8 @@ export const POST: APIRoute = async ({ cookies, params }) => {
       data: { read: true },
     });
     return json(row);
-  } catch (e: unknown) {
-    return json(
-      { error: e instanceof Error ? e.message : "Failed" },
-      500
-    );
+  } catch (e) {
+    console.error("[messages:read] ERROR:", e);
+    return json({ error: "Failed" }, 500);
   }
 };

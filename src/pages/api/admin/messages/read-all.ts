@@ -14,10 +14,8 @@ export const POST: APIRoute = async ({ cookies }) => {
       data: { read: true },
     });
     return json({ ok: true, count: result.count });
-  } catch (e: unknown) {
-    return json(
-      { error: e instanceof Error ? e.message : "Failed" },
-      500
-    );
+  } catch (e) {
+    console.error("[messages:readAll] ERROR:", e);
+    return json({ error: "Failed" }, 500);
   }
 };

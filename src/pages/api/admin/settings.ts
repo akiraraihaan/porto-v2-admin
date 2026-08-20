@@ -3,6 +3,13 @@ import type { Prisma } from "@prisma/client";
 import { getAuthUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { json } from "@/lib/http";
+import { checkCsrfOrigin } from "@/lib/sanitize";
+
+const ADMIN_API = [
+  import.meta.env.SITE_URL,
+  "https://admin.akiraa.site",
+  "http://localhost:4322",
+].filter(Boolean) as string[];
 
 export const GET: APIRoute = async ({ cookies }) => {
   if (!getAuthUser(cookies)) {
@@ -18,10 +25,14 @@ export const PUT: APIRoute = async ({ cookies, request }) => {
     return json({ error: "Unauthorized" }, 401);
   }
 
+  if (!checkCsrfOrigin(request, ADMIN_API)) {
+    return json({ error: "Forbidden" }, 403);
+  }
+
   try {
     const { key, value } = await request.json();
     if (!key || typeof key !== "string") {
-return json({ error: "Key is required" }, 400);
+      return json({ error: "Key is required" }, 400);
     }
 
     let parsedValue: Prisma.InputJsonValue = value as Prisma.InputJsonValue;
@@ -40,17 +51,19 @@ return json({ error: "Key is required" }, 400);
     });
 
     return json({ ok: true });
-  } catch (e: unknown) {
-    return json(
-      { error: e instanceof Error ? e.message : "Save failed" },
-      400
-    );
+  } catch (e) {
+    console.error("[settings:update] ERROR:", e);
+    return json({ error: "Save failed" }, 400);
   }
 };
 
-export const DELETE: APIRoute = async ({ cookies, url }) => {
+export const DELETE: APIRoute = async ({ cookies, url, request }) => {
   if (!getAuthUser(cookies)) {
     return json({ error: "Unauthorized" }, 401);
+  }
+
+  if (!checkCsrfOrigin(request, ADMIN_API)) {
+    return json({ error: "Forbidden" }, 403);
   }
 
   const key = url.searchParams.get("key");
@@ -58,6 +71,11 @@ export const DELETE: APIRoute = async ({ cookies, url }) => {
     return json({ error: "Key is required" }, 400);
   }
 
-  await prisma.siteSetting.delete({ where: { key } });
-  return json({ ok: true });
+  try {
+    await prisma.siteSetting.delete({ where: { key } });
+    return json({ ok: true });
+  } catch (e) {
+    console.error("[settings:delete] ERROR:", e);
+    return json({ error: "Delete failed" }, 400);
+  }
 };
